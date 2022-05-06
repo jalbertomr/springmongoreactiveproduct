@@ -1,5 +1,7 @@
 package com.bext.reactive.service;
 
+import org.springframework.http.ResponseEntity;
+
 import com.bext.reactive.dto.ProductDto;
 import com.bext.reactive.entity.Product;
 
@@ -14,4 +16,8 @@ public interface IProductService {
 	public Mono<Product> saveProduct(Product product);
 	public Mono<ProductDto> update(Mono<ProductDto> productDtoMono, String id);
 	public Mono<Void> delete(String id);
+	public Mono<Product> deleteExist(String id);
+	public Mono<ResponseEntity<Void>> deleteWithHttpResponse(String id);
+	public Mono<ResponseEntity<ProductDto>> deleteWithHttpResponseProductDto(String id);
+	public Mono<ResponseEntity<ProductDto>> getWithResponse(String id);
 }
