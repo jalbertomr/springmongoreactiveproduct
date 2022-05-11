@@ -29,11 +29,6 @@ public class SampleDataInitializer {
 	    repository.deleteAll()
 	    .thenMany(productFluxSaved)
 	    .thenMany( this.repository.findAll())
-	    .subscribe( new Consumer<Product>() {
-			@Override
-			public void accept(Product product) {
-				log.info(product.toString());
-			}
-		});
+	    .subscribe(product -> log.info(product.toString()));
 	}
 }
