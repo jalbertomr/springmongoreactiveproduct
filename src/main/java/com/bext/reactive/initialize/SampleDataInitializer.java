@@ -1,6 +1,6 @@
 package com.bext.reactive.initialize;
 
-import java.util.function.Consumer;
+import java.util.concurrent.Executors;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -12,6 +12,7 @@ import com.bext.reactive.repository.IProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Component
@@ -29,6 +30,7 @@ public class SampleDataInitializer {
 	    repository.deleteAll()
 	    .thenMany(productFluxSaved)
 	    .thenMany( this.repository.findAll())
+	    .subscribeOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
 	    .subscribe(product -> log.info(product.toString()));
 	}
 }
