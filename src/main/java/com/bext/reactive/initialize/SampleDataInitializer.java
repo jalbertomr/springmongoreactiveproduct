@@ -22,7 +22,7 @@ public class SampleDataInitializer {
 	
 	@EventListener(ApplicationReadyEvent.class)
 	public void initialize() {
-		Flux<Product> productFluxSaved = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE")
+		var productFluxSaved = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE")
 	    .map(prodName -> new Product(null, prodName, 2, 111, null))
 	    .flatMap(this.repository::save);
 	    
