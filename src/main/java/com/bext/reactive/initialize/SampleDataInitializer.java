@@ -22,9 +22,9 @@ public class SampleDataInitializer {
 	
 	@EventListener(ApplicationReadyEvent.class)
 	public void initialize() {
-		Flux<String> products = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE");
-	    Flux<Product> productFlux = products.map(prodName -> new Product(null, prodName, 2, 111, null));
-	    Flux<Product> productFluxSaved = productFlux.flatMap(this.repository::save);
+		Flux<Product> productFluxSaved = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE")
+	    .map(prodName -> new Product(null, prodName, 2, 111, null))
+	    .flatMap(this.repository::save);
 	    
 	    repository.deleteAll()
 	    .thenMany(productFluxSaved)
