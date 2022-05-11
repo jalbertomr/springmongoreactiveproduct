@@ -59,14 +59,14 @@ public class ProductServiceImpl implements IProductService {
 						.doOnNext(e -> e.setId(id)))
 				.flatMap(repository::save).map(AppUtils::entityToDto);
 	}
-
+	
 	@Override
 	public Mono<Void> delete(String id) {
 		return repository.deleteById(id);
 	}
 	
 	@Override
-	public Mono<ResponseEntity<ProductDto>> getWithResponse(String id){
+	public Mono<ResponseEntity<ProductDto>> getWithHttpResponse(String id){
 		return this.getProduct(id).map(ResponseEntity::ok)
 				.switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
 	}

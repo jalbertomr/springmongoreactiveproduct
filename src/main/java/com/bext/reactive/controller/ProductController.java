@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.bext.reactive.dto.ProductDto;
 import com.bext.reactive.entity.Product;
+import com.bext.reactive.repository.IProductRepository;
 import com.bext.reactive.serviceImpl.ProductServiceImpl;
 import com.bext.reactive.utils.AppUtils;
 
@@ -28,24 +29,41 @@ public class ProductController {
 	@Autowired
 	ProductServiceImpl service;
 	
+	@Autowired
+	IProductRepository repository;
+	
 	@GetMapping
 	public Flux<ProductDto> getProducts(){
 		return service.getProducts();
 	}
 	
+//	@GetMapping("/{id}")
+//	public Mono<ResponseEntity<ProductDto>> getProduct(@PathVariable("id") String id){
+//		return service.getWithResponse(id);
+//	}
+	
 	@GetMapping("/{id}")
-	public Mono<ResponseEntity<ProductDto>> getProduct(@PathVariable("id") String id){
-		return service.getWithResponse(id);
+	public Mono<ResponseEntity<ProductDto>> getProduct(@PathVariable("id") String id) {
+		 return service.getProduct(id).map(ResponseEntity::ok)
+		 .switchIfEmpty(Mono.error( new ResponseStatusException(HttpStatus.NOT_FOUND)));
 	}
 	
-	@GetMapping("/price-range/")
+	@GetMapping("/price-range")
 	public Flux<ProductDto> getProductInRange(@RequestParam("min") double min, @RequestParam("max") double max) {
-	return service.getProductInRange(min, max);
+	return service.getProductInRange(min, max)
+			.switchIfEmpty(Mono.error( new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
 	
+//	@PostMapping
+//	public Mono<ProductDto> saveProduct(@RequestBody Mono<ProductDto> productDtoMono) {
+//		return service.save(productDtoMono);
+//	}
+	
 	@PostMapping
-	public Mono<ProductDto> saveProduct(@RequestBody Mono<ProductDto> productDtoMono) {
-		return service.save(productDtoMono);
+	public Mono<ResponseEntity<Product>> saveProduct(@RequestBody Product product){
+		return repository.save(product)
+				.map(productSaved -> ResponseEntity.ok(productSaved))
+				.defaultIfEmpty(ResponseEntity.notFound().build());
 	}
 	
 	@PostMapping("/saveproduct")

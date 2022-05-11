@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 public interface IProductService {
 	public Flux<ProductDto> getProducts();
 	public Mono<ProductDto> getProduct(String id);
+	public Mono<ResponseEntity<ProductDto>> getWithHttpResponse(String id);
 	public Flux<ProductDto> getProductInRange(double min, double max);
 	public Mono<ProductDto> save(Mono<ProductDto> productDtoMono);
 	public Mono<Product> saveProduct(Product product);
@@ -19,5 +20,5 @@ public interface IProductService {
 	public Mono<Product> deleteExist(String id);
 	public Mono<ResponseEntity<Void>> deleteWithHttpResponse(String id);
 	public Mono<ResponseEntity<ProductDto>> deleteWithHttpResponseProductDto(String id);
-	public Mono<ResponseEntity<ProductDto>> getWithResponse(String id);
+	
 }
