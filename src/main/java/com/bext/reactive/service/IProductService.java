@@ -1,6 +1,7 @@
 package com.bext.reactive.service;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import com.bext.reactive.dto.ProductDto;
 import com.bext.reactive.entity.Product;
@@ -15,10 +16,11 @@ public interface IProductService {
 	public Flux<ProductDto> getProductInRange(double min, double max);
 	public Mono<ProductDto> save(Mono<ProductDto> productDtoMono);
 	public Mono<Product> saveProduct(Product product);
+	public Mono<ResponseEntity<Product>> saveProductWithHttpResponse(Product product);
+	public Mono<ResponseEntity<Product>> saveProductWithHttpResponseCreated(Product product, ServerHttpRequest req);
 	public Mono<ProductDto> update(Mono<ProductDto> productDtoMono, String id);
 	public Mono<Void> delete(String id);
 	public Mono<Product> deleteExist(String id);
 	public Mono<ResponseEntity<Void>> deleteWithHttpResponse(String id);
 	public Mono<ResponseEntity<ProductDto>> deleteWithHttpResponseProductDto(String id);
-	
 }

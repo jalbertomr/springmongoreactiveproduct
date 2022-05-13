@@ -1,12 +1,17 @@
 package com.bext.reactive.controller;
 
+import java.net.URI;
+import java.time.Instant;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -71,9 +76,84 @@ public class ProductController {
 		return service.saveProduct(product);
 	}
 	
-	@PostMapping("/update/{id}")
+	@PostMapping("/saveproductservicewithhttpresponse")
+	public Mono<ResponseEntity<Product>> saveProductService(@RequestBody Product product) {
+		return service.saveProductWithHttpResponse(product);
+	}
+	
+	@PostMapping("/saveproductservicewithhttpresponsecreated")
+	public Mono<ResponseEntity<Product>> saveProductServiceCreated(@RequestBody Product product, ServerHttpRequest req){
+		return service.saveProductWithHttpResponseCreated(product, req);
+	}
+	
+	@PutMapping("/updateNoHttp/{id}")
 	public Mono<ProductDto> updateProduct(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id){
 		return service.update(productDtoMono, id);
+	}
+	
+	@PutMapping("/update/{id}")
+	public Mono<ResponseEntity<Product>> updateProduct(@RequestBody Product product, @PathVariable("id") String id) {
+		return repository.findById(id)
+		.flatMap(productfound -> { productfound.setName(product.getName());
+								   productfound.setPrice(product.getPrice());
+								   productfound.setQty(product.getQty());
+								   productfound.setUpdatetime(Instant.now());
+		                           return repository.save(productfound);
+		                         })
+		.map(productSaved -> ResponseEntity.ok(productSaved))
+		.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/updatev2product/{id}")
+	public Mono<ResponseEntity<Product>> updateProductv2(@RequestBody Product product, @PathVariable("id") String id){
+		return repository.findById(id)
+		.doOnNext(productFound -> { productFound.setName(product.getName());
+		                            productFound.setPrice(product.getPrice());
+		                            productFound.setQty(product.getQty());
+		                            productFound.setUpdatetime(Instant.now());
+		                          })
+		.flatMap(repository::save)
+		.map(productSaved -> ResponseEntity.ok(productSaved))
+		.defaultIfEmpty( new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/updatev3product/{id}")
+    public Mono<ResponseEntity<ProductDto>> updateProductv3(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id) {
+		return repository.findById(id)
+				.flatMap( prodFound -> productDtoMono.map(AppUtils::dtoToEntity)
+				                                     .doOnNext( prodDtoToEntity -> prodDtoToEntity.setId( id)))
+		        .flatMap(repository::save).map(AppUtils::entityToDto)
+		        .map(prodSaved -> ResponseEntity.ok(prodSaved))
+		        .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/updatev4product/{id}")
+	public Mono<ResponseEntity<ProductDto>> updateProductv4(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id, ServerHttpRequest req){
+		return repository.findById(id)
+				.flatMap( prodFound -> productDtoMono.map(AppUtils::dtoToEntity)
+				                                     .doOnNext( productDtoToEntity -> productDtoToEntity.setId( id)))
+				.flatMap(repository::save).map(AppUtils::entityToDto)
+				.map(prodSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodSaved.getId())).body(prodSaved))
+				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/updatev5product/{id}")
+	public Mono<ResponseEntity<ProductDto>> updateProductv5(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id, ServerHttpRequest req) {
+		return service.updateWithHttpResponse(productDtoMono, id, req);
+	}
+	
+	@PutMapping("/updatev6product/{id}")
+	public Mono<ResponseEntity<ProductDto>> updateProductv6(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id, ServerHttpRequest req){
+		return service.update(productDtoMono, id)
+				.map(prodSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodSaved.getId())).body(prodSaved))
+				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/updatev7product/{id}")
+	public Mono<ResponseEntity<ProductDto>> updateProductv7(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id, ServerHttpRequest req){
+		return service.update(productDtoMono, id)
+				.map(prodSaved -> ResponseEntity.accepted().body(prodSaved))
+				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 	
 	@DeleteMapping("/deletenohttpresponse/{id}")
@@ -81,7 +161,7 @@ public class ProductController {
 		return service.delete(id);
 	}
 	
-	@DeleteMapping("/layerservicedeletehttp/{id}")
+	@DeleteMapping("/deletehttplayerservice/{id}")
 	public Mono<ResponseEntity<ProductDto>> deleteProductResponse(@PathVariable("id") String id){
 		return service.deleteWithHttpResponseProductDto(id);
 	}

@@ -24,13 +24,13 @@ public class SampleDataInitializer {
 	@EventListener(ApplicationReadyEvent.class)
 	public void initialize() {
 		var productFluxSaved = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE")
-	    .map(prodName -> new Product(null, prodName, 2, 111, null))
+	    .map(prodName -> new Product(null, prodName,  (int) (Math.random() * 20), Math.random() * 1000, null))
 	    .flatMap(this.repository::save);
 	    
 	    repository.deleteAll()
 	    .thenMany(productFluxSaved)
 	    .thenMany( this.repository.findAll())
-	    .subscribeOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
+	    //.subscribeOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
 	    .subscribe(product -> log.info(product.toString()));
 	}
 }

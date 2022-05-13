@@ -1,9 +1,13 @@
 package com.bext.reactive.serviceImpl;
 
+import java.net.URI;
+import java.time.Instant;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Range;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,6 +40,12 @@ public class ProductServiceImpl implements IProductService {
 	}
 
 	@Override
+	public Mono<ResponseEntity<ProductDto>> getWithHttpResponse(String id){
+		return this.getProduct(id).map(ResponseEntity::ok)
+				.switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
+	}
+	
+	@Override
 	public Flux<ProductDto> getProductInRange(double min, double max) {
 		return repository.findByPriceBetween(Range.closed(min, max));
 	}
@@ -49,15 +59,38 @@ public class ProductServiceImpl implements IProductService {
 
 	@Override
 	public Mono<Product> saveProduct( Product product){
-		return Mono.from(repository.save(product));
+		return repository.save(product);
+	}
+	
+	@Override
+	public Mono<ResponseEntity<Product>> saveProductWithHttpResponse(Product product) {
+		return repository.save(product)
+				.map(prodSaved -> ResponseEntity.ok(prodSaved));
+				//TODO Handle Exception
+	}
+	
+	@Override
+	public Mono<ResponseEntity<Product>> saveProductWithHttpResponseCreated(Product product, ServerHttpRequest req) {
+		return repository.save(product)
+				.map(prodSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodSaved.getId())).body(prodSaved));
+				//TODO Exception 
 	}
 	
 	@Override
 	public Mono<ProductDto> update(Mono<ProductDto> productDtoMono, String id) {
 		return repository.findById(id)
 				.flatMap(p -> productDtoMono.map(AppUtils::dtoToEntity)
-						.doOnNext(e -> e.setId(id)))
+						.doOnNext(e -> {e.setId(id); e.setUpdatetime(Instant.now());}))
 				.flatMap(repository::save).map(AppUtils::entityToDto);
+	}
+	
+	public Mono<ResponseEntity<ProductDto>> updateWithHttpResponse(Mono<ProductDto> productDtoMono, String id, ServerHttpRequest req) {
+		return repository.findById(id)
+				.flatMap( prodFound -> productDtoMono.map(AppUtils::dtoToEntity)
+						.doOnNext( productDtoToEntity -> {productDtoToEntity.setId( id);productDtoToEntity.setUpdatetime(Instant.now());}))
+				.flatMap(repository::save).map(AppUtils::entityToDto)
+				.map(prodSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodSaved.getId())).body(prodSaved))
+				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 	
 	@Override
@@ -66,17 +99,10 @@ public class ProductServiceImpl implements IProductService {
 	}
 	
 	@Override
-	public Mono<ResponseEntity<ProductDto>> getWithHttpResponse(String id){
-		return this.getProduct(id).map(ResponseEntity::ok)
-				.switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
-	}
-	
-	@Override
 	public Mono<ResponseEntity<Void>> deleteWithHttpResponse(String id){
 		return this.getProduct(id)
 		.flatMap( p -> repository.deleteById(id)
-				 .then(Mono.just(new ResponseEntity<Void>(HttpStatus.OK)))
-				)
+				                 .then(Mono.just(new ResponseEntity<Void>(HttpStatus.OK))) )
 		.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 
@@ -94,10 +120,11 @@ public class ProductServiceImpl implements IProductService {
 	
 	@Override
 	public Mono<ResponseEntity<ProductDto>> deleteWithHttpResponseProductDto(String id){
-				return repository.findById(id).map(AppUtils::entityToDto)
-		        .map( productFound -> {repository.deleteById(id).subscribe(); return productFound;}
-				).map(product -> ResponseEntity.ok(product))
-		.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+				return repository.findById(id)
+						         .map(AppUtils::entityToDto)
+		                         .map( productFound -> {repository.deleteById(id).subscribe(); return productFound;})
+		                         .map( product -> ResponseEntity.ok(product))
+		                         .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
-
+	
 }

@@ -73,3 +73,34 @@ and return Mono<Product>, the @RequestBody do the job of work with Mono<T> or ju
 	public Mono<Product> saveProductProduct(@RequestBody Product product){
 		return service.saveProduct(product);
 	}	 
+	
+Are shown many progresive versions of the update method with many variant till the final version, just for learning purpouses.
+	
+#### Data Initializer	
+	
+To initialize de data on the database create a bean when the application startup, this bean create a flux of primary data that will be completed with random values and then saved on the database. this flux will not be executed until subscribe is called.
+
+So first from repository.deleteAll() the data and then run the saved pipeline, and then run in the pipeline a findall() that return all the data to finally execute al the pipeline with subscribe with a consumer logger to show all the data created in the initialization.
+
+    @Slf4j
+    @Component
+    @RequiredArgsConstructor
+    public class SampleDataInitializer {
+    private final IProductRepository repository;
+	
+	 @EventListener(ApplicationReadyEvent.class)
+	 public void initialize() {
+		var productFluxSaved = Flux.just("ProductA","ProductB","ProductC","ProductD","ProductE")
+	    .map(prodName -> new Product(null, prodName,(int)(Math.random() * 20), Math.random() * 1000, null))
+	    .flatMap(this.repository::save);
+	    
+	    repository.deleteAll()
+	    .thenMany(productFluxSaved)
+	    .thenMany( this.repository.findAll())
+	    //.subscribeOn(Schedulers.fromExecutor(Executors.newSingleThreadExecutor()))
+	    .subscribe(product -> log.info(product.toString()));
+	  }
+    }
+    
+	
+The Schedulers have only one event loop per core per machine
