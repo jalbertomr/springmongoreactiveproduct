@@ -64,10 +64,17 @@ public class ProductController {
 //		return service.save(productDtoMono);
 //	}
 	
-	@PostMapping
-	public Mono<ResponseEntity<Product>> saveProduct(@RequestBody Product product){
+	@PostMapping("/saveproductwithok")
+	public Mono<ResponseEntity<Product>> saveProductwithOk(@RequestBody Product product){
 		return repository.save(product)
 				.map(productSaved -> ResponseEntity.ok(productSaved))
+				.defaultIfEmpty(ResponseEntity.notFound().build());
+	}
+	
+	@PostMapping("/saveproducthttp")
+	public Mono<ResponseEntity<Product>> saveProductCreated(@RequestBody Product product, ServerHttpRequest req){
+		return repository.save(product)
+				.map(productSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + productSaved.getId())).body(productSaved))
 				.defaultIfEmpty(ResponseEntity.notFound().build());
 	}
 	
@@ -84,6 +91,14 @@ public class ProductController {
 	@PostMapping("/saveproductservicewithhttpresponsecreated")
 	public Mono<ResponseEntity<Product>> saveProductServiceCreated(@RequestBody Product product, ServerHttpRequest req){
 		return service.saveProductWithHttpResponseCreated(product, req);
+	}
+	
+	@PostMapping
+	public Mono<ResponseEntity<ProductDto>> saveProduct(@RequestBody Mono<ProductDto> productDto, ServerHttpRequest req){
+		return productDto.map(AppUtils::dtoToEntity)
+		.flatMap(repository::save)
+		.map(AppUtils::entityToDto)
+		.map(prodDtoSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodDtoSaved.getId())).body(prodDtoSaved));
 	}
 	
 	@PutMapping("/updateNoHttp/{id}")
@@ -151,6 +166,13 @@ public class ProductController {
 	
 	@PutMapping("/updatev7product/{id}")
 	public Mono<ResponseEntity<ProductDto>> updateProductv7(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id, ServerHttpRequest req){
+		return service.update(productDtoMono, id)
+				.map(prodSaved -> ResponseEntity.accepted().body(prodSaved))
+				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	}
+	
+	@PutMapping("/{id}")
+	public Mono<ResponseEntity<ProductDto>> update(@RequestBody Mono<ProductDto> productDtoMono, @PathVariable("id") String id){
 		return service.update(productDtoMono, id)
 				.map(prodSaved -> ResponseEntity.accepted().body(prodSaved))
 				.defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
