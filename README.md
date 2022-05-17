@@ -76,7 +76,7 @@ and return Mono<Product>, the @RequestBody do the job of work with Mono<T> or ju
 	
 Are shown many progresive versions of the update method with many variant till the final version, just for learning purpouses.
 	
-#### Validating the Dto
+#### Validating the ProductDto (Controller level)
 
 The validation of ProductDto is made with JSR-303 validation, the ProductDto class is annotated in their fields that requieres the constraints. The Controller is annotated in their parameter with @Valid, and the related errors of the validations are handled by GlobalErrorController class annotated with @RestControllerAdvice.
 
@@ -136,6 +136,61 @@ The GlobalErrorController
 			return new ResponseEntity<>(body, e.getStatus());
 		}
 	}
+
+#### Validating the Product Entity (Service Level)
+
+Validating the Product Entity at Service level uses Validator and the JSR-303 annotations in the entity model.
+
+	public Mono<Product> saveProduct( Product product){
+		Set<ConstraintViolation<Product>> violations = validator.validate(product);
+		if (!violations.isEmpty()) {
+			StringBuilder sb = new StringBuilder();
+			for(ConstraintViolation<Product> constraintViolation : violations) {
+				sb.append(constraintViolation.getMessage());
+			}
+			throw new ConstraintViolationException("saveProduct Error constraint: " + sb.toString(), violations);
+		}
+		product.setUpdatetime(Instant.now());
+		return repository.save(product);
+	}
+
+The Product Model
+
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Document(collection = "product")
+	@ToString
+	public class Product {
+		@Id
+		private String id;
+		
+		@NotNull(message="name must be present")
+		private String name;
+		
+		@Min(value = 1, message = "Quantity must be at least One")
+		@Max(value = 100, message = "Quantity more than 100 must be authorized")
+		private int qty;
+		
+		@Min(value = 0, message = "price must be positive")
+		private double price;
+		
+		private Instant updatetime = Instant.now();
+	}
+	
+To Catch the error of Validator is used the GlobalErrorController.class handling the ConstriantViolationException
+
+    ...
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<?> handleException(ConstraintViolationException e){
+		LinkedHashMap<Object,Object> body = new LinkedHashMap<>();
+		body.put("timestamp", new Date());
+		body.put("status", HttpStatus.BAD_REQUEST);
+		body.put("errors", e.getMessage());
+		
+		return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+	}
+	...
 
 	
 #### Data Initializer	

@@ -2,6 +2,11 @@ package com.bext.reactive.serviceImpl;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validator;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Range;
@@ -25,6 +30,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class ProductServiceImpl implements IProductService {
 
+	@Autowired
+	private Validator validator;
+	
 	@Autowired
 	private IProductRepository repository;
 
@@ -58,6 +66,14 @@ public class ProductServiceImpl implements IProductService {
 
 	@Override
 	public Mono<Product> saveProduct( Product product){
+		Set<ConstraintViolation<Product>> violations = validator.validate(product);
+		if (!violations.isEmpty()) {
+			StringBuilder sb = new StringBuilder();
+			for(ConstraintViolation<Product> constraintViolation : violations) {
+				sb.append(constraintViolation.getMessage());
+			}
+			throw new ConstraintViolationException("saveProduct Error constraint: " + sb.toString(), violations);
+		}
 		product.setUpdatetime(Instant.now());
 		return repository.save(product);
 	}
@@ -66,14 +82,12 @@ public class ProductServiceImpl implements IProductService {
 	public Mono<ResponseEntity<Product>> saveProductWithHttpResponse(Product product) {
 		return repository.save(product)
 				.map(prodSaved -> ResponseEntity.ok(prodSaved));
-				//TODO Handle Exception
 	}
 	
 	@Override
 	public Mono<ResponseEntity<Product>> saveProductWithHttpResponseCreated(Product product, ServerHttpRequest req) {
 		return repository.save(product)
 				.map(prodSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodSaved.getId())).body(prodSaved));
-				//TODO Exception 
 	}
 	
 	@Override

@@ -30,7 +30,7 @@ public class Product {
 	@Max(value = 100, message = "Quantity more than 100 must be authorized")
 	private int qty;
 	
-	@NotNull(message = "price cannot be null")
+	@Min(value = 0, message = "price must be positive")
 	private double price;
 	
 	private Instant updatetime = Instant.now();

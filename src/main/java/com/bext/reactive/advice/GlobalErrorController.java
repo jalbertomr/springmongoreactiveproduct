@@ -6,6 +6,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.validation.ConstraintViolationException;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,4 +31,13 @@ public class GlobalErrorController {
 		return new ResponseEntity<>(body, e.getStatus());
 	}
 	
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<?> handleException(ConstraintViolationException e){
+		LinkedHashMap<Object,Object> body = new LinkedHashMap<>();
+		body.put("timestamp", new Date());
+		body.put("status", HttpStatus.BAD_REQUEST);
+		body.put("errors", e.getMessage());
+		
+		return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+	}
 }
