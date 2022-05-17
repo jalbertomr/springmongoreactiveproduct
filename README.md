@@ -1,6 +1,6 @@
-## Spring Boot Reactive Web MongoDB CRUD for Product
+## Spring Boot Reactive Web MongoDB CRUD for ProductDto
 
-A simple implemention of reactive web of a product entity with CRUD operations, based on javaTeachi channel extended with many options of process responses from Flux to Https.
+A simple implemention of reactive web of a product entity with CRUD operations with many options of process responses from Flux to Https. The API interface (Controller input and output) uses ProductDto to transfer data validating some fields using JSR-303 at two levels, At Controller ProductDto level and Repository Level. The error message returned when invalid data is handled by GlobalErrorController class annotated with @RestControllerAdvice.
 
 __Sample of options of processing at controller level__
 
@@ -75,6 +75,68 @@ and return Mono<Product>, the @RequestBody do the job of work with Mono<T> or ju
 	}	 
 	
 Are shown many progresive versions of the update method with many variant till the final version, just for learning purpouses.
+	
+#### Validating the Dto
+
+The validation of ProductDto is made with JSR-303 validation, the ProductDto class is annotated in their fields that requieres the constraints. The Controller is annotated in their parameter with @Valid, and the related errors of the validations are handled by GlobalErrorController class annotated with @RestControllerAdvice.
+
+ProductDto
+
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public class ProductDto implements Serializable{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5360764695721848031L;
+	
+		@Id
+		private String id;
+		
+		@NotEmpty(message = "name in ProductDto must not be empty")
+		@NotNull(message = "name in ProductDto must not be null")
+		private String name;
+		
+		@Min(value = 1, message = "Quantity must be more than one")
+		@Max(value = 100, message = "Quantity more than 100 not allowed")
+		private int qty;
+		
+		private double price;
+		
+		private Instant updatetime;
+	
+	}
+	
+The Controller
+
+	@PostMapping
+	public Mono<ResponseEntity<ProductDto>> saveProduct(@Valid @RequestBody Mono<ProductDto> productDto, ServerHttpRequest req){
+		return productDto.map(AppUtils::dtoToEntity)
+		.flatMap(service::saveProduct)		
+		.map(AppUtils::entityToDto)
+		.map(prodDtoSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodDtoSaved.getId())).body(prodDtoSaved));
+		//.switchIfEmpty(Mono.error((new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))));  //Not necesary
+	}
+
+The GlobalErrorController
+
+	@RestControllerAdvice
+	public class GlobalErrorController {
+	
+		@ExceptionHandler(WebExchangeBindException.class)
+		public ResponseEntity<?> handleException(WebExchangeBindException e){
+			LinkedHashMap<Object,Object> body = new LinkedHashMap<>();
+			body.put("timestamp", new Date());
+			body.put("status", e.getStatus());
+			List<String> errors = new ArrayList<String>();
+		    errors = e.getAllErrors().stream().map(x -> x.getDefaultMessage())
+		    		.collect(Collectors.toList());
+			body.put("errors", errors);
+			return new ResponseEntity<>(body, e.getStatus());
+		}
+	}
+
 	
 #### Data Initializer	
 	

@@ -17,10 +17,14 @@ import lombok.NoArgsConstructor;
 
 
 @Data
-//@NoArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class ProductDto implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5360764695721848031L;
+
 	@Id
 	private String id;
 	
@@ -36,9 +40,4 @@ public class ProductDto implements Serializable{
 	
 	private Instant updatetime;
 
-	public ProductDto() {
-		
-	}
-	
-	
 }
