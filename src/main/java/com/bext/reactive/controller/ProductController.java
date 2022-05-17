@@ -3,6 +3,8 @@ package com.bext.reactive.controller;
 import java.net.URI;
 import java.time.Instant;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -94,11 +96,12 @@ public class ProductController {
 	}
 	
 	@PostMapping
-	public Mono<ResponseEntity<ProductDto>> saveProduct(@RequestBody Mono<ProductDto> productDto, ServerHttpRequest req){
+	public Mono<ResponseEntity<ProductDto>> saveProduct(@Valid @RequestBody Mono<ProductDto> productDto, ServerHttpRequest req){
 		return productDto.map(AppUtils::dtoToEntity)
-		.flatMap(repository::save)
+		.flatMap(service::saveProduct)		
 		.map(AppUtils::entityToDto)
 		.map(prodDtoSaved -> ResponseEntity.created(URI.create(req.getPath() + "/" + prodDtoSaved.getId())).body(prodDtoSaved));
+		//.switchIfEmpty(Mono.error((new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))));  //Not necesary
 	}
 	
 	@PutMapping("/updateNoHttp/{id}")

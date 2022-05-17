@@ -59,6 +59,7 @@ public class ProductServiceImpl implements IProductService {
 
 	@Override
 	public Mono<Product> saveProduct( Product product){
+		product.setUpdatetime(Instant.now());
 		return repository.save(product);
 	}
 	
