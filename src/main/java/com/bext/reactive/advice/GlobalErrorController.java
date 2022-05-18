@@ -36,7 +36,12 @@ public class GlobalErrorController {
 		LinkedHashMap<Object,Object> body = new LinkedHashMap<>();
 		body.put("timestamp", new Date());
 		body.put("status", HttpStatus.BAD_REQUEST);
-		body.put("errors", e.getMessage());
+		
+		List<String> errors = new ArrayList<>();
+		errors = e.getConstraintViolations().stream().map(x -> x.getMessage())
+		.collect(Collectors.toList());
+		
+		body.put("errors", errors);
 		
 		return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
 	}

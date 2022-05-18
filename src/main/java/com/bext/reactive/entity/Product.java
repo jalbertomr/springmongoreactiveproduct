@@ -23,14 +23,14 @@ public class Product {
 	@Id
 	private String id;
 	
-	@NotNull(message="name must be present")
+	@NotNull(message="Product-name must be present")
 	private String name;
 	
-	@Min(value = 1, message = "Quantity must be at least One")
-	@Max(value = 100, message = "Quantity more than 100 must be authorized")
+	@Min(value = 1, message = "Product-Quantity must be at least One")
+	@Max(value = 100, message = "Product-Quantity more than 100 must be authorized")
 	private int qty;
 	
-	@Min(value = 0, message = "price must be positive")
+	@Min(value = 0, message = "Product-price must be positive")
 	private double price;
 	
 	private Instant updatetime = Instant.now();

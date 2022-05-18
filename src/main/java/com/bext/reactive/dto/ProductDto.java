@@ -28,12 +28,12 @@ public class ProductDto implements Serializable{
 	@Id
 	private String id;
 	
-	@NotEmpty(message = "name in ProductDto must not be empty")
-	@NotNull(message = "name in ProductDto must not be null")
+	@NotEmpty(message = "ProductDto-name in ProductDto must not be empty")
+	@NotNull(message = "ProductDto-name in ProductDto must not be null")
 	private String name;
 	
-	@Min(value = 1, message = "Quantity must be more than one")
-	@Max(value = 100, message = "Quantity more than 100 not allowed")
+	@Min(value = 1, message = "ProductDto-Quantity must be at least One")
+	@Max(value = 100, message = "ProductDto-Quantity more than 100 must be authorized")
 	private int qty;
 	
 	private double price;
